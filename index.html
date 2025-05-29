@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AppCatalogue</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script
+      src="https://kit.fontawesome.com/51e7ac3f14.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: "#058347",
+                hover: "#2563eb",
+              },
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Custom styles that are difficult to achieve with Tailwind alone */
+      .app-card:hover {
+        box-shadow: 0 0 10px #515151;
+      }
+      .app-card {
+        cursor: grab;
+        transition: 0.5s ease-in-out;
+      }
+      .app-card.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+      }
+      .app-card.drag-over {
+        border: 2px dashed #058347;
+        background-color: rgba(59, 130, 246, 0.1);
+      }
+      .file-input {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+      .icon-gallery-grid {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      /* Custom scrollbar styles */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(39, 40, 45, 0.5);
+        border-radius: 10px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(75, 85, 99, 0.8);
+        border-radius: 10px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(107, 114, 128, 0.8);
+      }
+
+      /* Firefox scrollbar */
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(75, 85, 99, 0.8) rgba(39, 40, 45, 0.5);
+      }
+
+      /* Light theme scrollbar */
+      .light .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(229, 231, 235, 0.5);
+      }
+
+      .light .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.8);
+      }
+
+      .light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(107, 114, 128, 0.8);
+      }
+
+      .light .custom-scrollbar {
+        scrollbar-color: rgba(156, 163, 175, 0.8) rgba(229, 231, 235, 0.5);
+      }
+
+      /* Smaller font sizes */
+      .sidebar-text {
+        font-size: 0.8rem;
+      }
+
+      .category-tab {
+        font-size: 0.8rem;
+      }
+
+      /* Light mode styles */
+      body.light {
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      body.light .sidebar {
+        background-color: #e5e5e5;
+        border-color: #d1d1d1;
+      }
+
+      body.light .fixed {
+        background-color: #e5e5e5;
+        border-color: #d1d1d1;
+      }
+
+      body.light .app-card {
+        background-color: #ffffff !important;
+        border-color: #d1d1d1 !important;
+      }
+
+      body.light #category-tabs .category-tab {
+        background-color: #000 !important;
+        border-color: #d1d1d1 !important;
+        color: #666 !important;
+      }
+
+      body.light #category-tabs .active {
+        background-color: #00371b !important;
+        color: #333 !important;
+      }
+
+      body.light #main-content {
+        background-color: #f5f5f5 !important;
+      }
+
+      body.light .text-white {
+        color: #333 !important;
+      }
+
+      body.light .text-gray-400 {
+        color: #666 !important;
+      }
+
+      body.light .border-[#27282d] {
+        border-color: #d1d1d1 !important;
+      }
+
+      body.light .bg-[#1d1d1d] {
+        background-color: #d1d1d1 !important;
+      }
+
+      body.light .bg-[#121212] {
+        background-color: #e5e5e5 !important;
+      }
+
+      body.light .hover\:bg-[#1d1d1d]:hover {
+        background-color: #d1d1d1 !important;
+      }
+
+      body.light .hover\:bg-[#27282d]:hover {
+        background-color: #c1c1c1 !important;
+      }
+
+      body.light #search-input {
+        background-color: #ffffff !important;
+        color: #333 !important;
+        border-color: none !important;
+      }
+
+      body.light #theme-toggle {
+        background-color: #d1d1d1 !important;
+        color: #333 !important;
+      }
+
+      body.light .app-menu {
+        background-color: #e5e5e5 !important;
+        border-color: #d1d1d1 !important;
+      }
+
+      body.light .app-menu button {
+        color: #333 !important;
+      }
+
+      body.light .app-menu button:hover {
+        background-color: #d1d1d1 !important;
+      }
+
+      body.light #add-app-modal .bg-[#121212],
+      body.light #icon-gallery-modal .bg-[#121212] {
+        background-color: #ffffff !important;
+        border-color: #d1d1d1 !important;
+      }
+
+      body.light #add-app-modal input,
+      body.light #add-app-modal select,
+      body.light #add-app-modal button,
+      body.light #icon-gallery-modal button {
+        background-color: #e5e5e5 !important;
+        color: #333 !important;
+        border-color: #d1d1d1 !important;
+      }
+
+      body.light #add-app-modal h2,
+      body.light #icon-gallery-modal h2 {
+        color: #333 !important;
+      }
+
+      body.light #add-app-modal p,
+      body.light #icon-gallery-modal p {
+        color: #666 !important;
+      }
+      body.dark .app-pin {
+        color: #058347 !important;
+      }
+      body.light .app-pin {
+        color: #058347 !important;
+      }
+
+      body.light .app-pin.text-gray-400 {
+        color: #666 !important;
+      }
+
+      body.light .launch-button {
+        background-color: transparent !important;
+        color: #333 !important;
+        border-color: #d1d1d1 !important;
+      }
+
+      body.light .launch-button:hover {
+        background-color: #d1d1d1 !important;
+      }
+    </style>
+  </head>
+  <body
+    class="font-sans bg-[#000] border-b border-[#1d1d1d] text-white flex min-h-screen w-full h-screen overflow-hidden dark"
+  >
+    <!-- Sidebar -->
+    <div
+      class="sidebar relative w-52 bg-[#0a0a0a] border-r border-t border-[#1d1d1d] flex flex-col transition-all duration-300 flex-shrink-0 h-screen custom-scrollbar"
+      style="-webkit-app-region: drag"
+      id="sidebar"
+    >
+      <div
+        class="flex items-center justify-between p-4 mb-2 border-b border-[#0a0a0a]"
+        style="-webkit-app-region: no-drag"
+      >
+        <div
+          class="text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis sidebar-text flex gap-2 justify-center items-center"
+          style="-webkit-app-region: no-drag"
+        >
+          <img class="rounded-lg w-7 h-7" src="logo/icon.png" alt="" /><span
+            class="text-sm font-light"
+            >AppLauncher</span
+          >
+        </div>
+        <!-- <button
+          id="sidebar-toggle"
+          onclick="toggleSidebar()"
+          class="absolute top-4 left-[15rem] z-50 w-8 h-8 rounded bg-[#1d1d1d] border border-[#27282d] text-white hover:bg-[#27282d] flex items-center justify-center transition-all duration-300"
+        >
+          <i
+            id="toggle-icon"
+            class="fa-solid fa-chevron-left transition-transform duration-300"
+          ></i>
+        </button> -->
+        <!-- <button
+          class="z-30 bg-transparent border-none text-white flex items-center justify-center w-7 h-7 rounded hover:bg-[#1d1d1d]"
+          id="sidebar-toggle"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m15 18-6-6 6-6"></path>
+          </svg>
+        </button> -->
+      </div>
+
+      <div class="flex-grow overflow-y-auto custom-scrollbar">
+        <div
+          class="flex items-center p-2 my-1 text-white cursor-pointer hover:bg-[#1d1d1d] active bg-[#27282d]"
+          data-view="home"
+          style="-webkit-app-region: no-drag"
+        >
+          <svg
+            class="w-5 h-5 mr-3 flex-shrink-0"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span
+            class="whitespace-nowrap overflow-hidden text-ellipsis sidebar-text"
+            >All Apps</span
+          >
+        </div>
+
+        <div
+          class="flex items-center p-2 my-1 text-white cursor-pointer hover:bg-[#1d1d1d]"
+          data-view="recent"
+          style="-webkit-app-region: no-drag"
+        >
+          <svg
+            class="w-5 h-5 mr-3 flex-shrink-0"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span
+            class="whitespace-nowrap overflow-hidden text-ellipsis sidebar-text"
+            >Recent</span
+          >
+        </div>
+
+        <div
+          class="flex items-center p-2 my-1 text-white cursor-pointer hover:bg-[#1d1d1d]"
+          data-view="most-used"
+          style="-webkit-app-region: no-drag"
+        >
+          <svg
+            class="w-5 h-5 mr-3 flex-shrink-0"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 20V10"></path>
+            <path d="M18 20V4"></path>
+            <path d="M6 20v-6"></path>
+          </svg>
+          <span
+            class="whitespace-nowrap overflow-hidden text-ellipsis sidebar-text"
+            >Most Used</span
+          >
+        </div>
+
+        <div
+          class="flex items-center p-2 my-1 text-white cursor-pointer hover:bg-[#1d1d1d]"
+          data-view="favorites"
+          style="-webkit-app-region: no-drag"
+        >
+          <svg
+            class="w-5 h-5 mr-3 flex-shrink-0"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            ></path>
+          </svg>
+          <span
+            class="whitespace-nowrap overflow-hidden text-ellipsis sidebar-text"
+            >Favorites</span
+          >
+        </div>
+
+        <div class="mt-5 pt-2 border-t border-[#121212]">
+          <div class="px-4 mb-2 text-xs font-semibold uppercase text-gray-500">
+            <span class="flex gap-3 justify-between items-center">
+              <span>Pinned Apps</span>
+              <img src="icons/icons8-pinned-50.png" class="w-10 h-10 p-2" />
+            </span>
+          </div>
+          <div
+            id="pinned-apps-container"
+            class="custom-scrollbar max-h-70 overflow-y-auto"
+            style="-webkit-app-region: no-drag"
+          >
+            <!-- Pinned apps will be added here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- <div
+        class="p-4 border-t border-[#27282d] flex items-center"
+        style="-webkit-app-region: no-drag"
+      >
+        <svg
+          class="w-5 h-5 mr-3 flex-shrink-0"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+          ></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        <span
+          class="whitespace-nowrap overflow-hidden text-ellipsis sidebar-text"
+          >Settings</span
+        >
+      </div> -->
+    </div>
+
+    <!-- Fixed Header -->
+    <div
+      class="fixed top-0 left-0 right-0 bg-[#000] z-50 flex justify-between border-t border-[#1d1d1d] items-start"
+      style="left: 13rem; transition: left 0.3s ease; -webkit-app-region: drag"
+    >
+      <h1 class="text-2xl m-4 font-bold mb-5 text-white">my apps</h1>
+      <div
+        class="flex-grow relative max-w-2xl m-4"
+        style="-webkit-app-region: no-drag"
+      >
+        <svg
+          class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          class="w-full py-2 px-10 border border-[#27282d] focus:outline-none focus:ring ring-[#1d1d1d] rounded-md bg-[#0a0a0a] text-white text-base text-xs"
+          placeholder="Search applications..."
+        />
+      </div>
+      <div
+        class="flex items-center"
+        id="window-controls"
+        style="-webkit-app-region: no-drag"
+      >
+        <button
+          id="min-button"
+          class="w-10 h-8 flex items-center justify-center hover:bg-[#2a2a2a]"
+        >
+          <span class="text-white text-lg">−</span>
+        </button>
+        <button
+          id="max-button"
+          class="w-10 h-8 flex items-center justify-center hover:bg-[#2a2a2a]"
+        >
+          <span class="text-white text-sm">▢</span>
+        </button>
+        <button
+          id="close-button"
+          class="w-10 h-8 flex items-center justify-center hover:bg-red-600"
+        >
+          <span class="text-white text-lg">×</span>
+        </button>
+      </div>
+      <!-- <div
+        class="flex gap-4 items-center ml-4"
+        style="-webkit-app-region: no-drag"
+      >
+        <button
+          id="theme-toggle"
+          class="bg-[#1d1d1d] border-none cursor-pointer text-white flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#27282d]"
+          aria-label="Toggle theme"
+        > -->
+      <!-- Moon icon for dark theme (default) -->
+      <!-- <svg
+            id="theme-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button> -->
+      <!-- </div> -->
+    </div>
+
+    <!-- Main Content -->
+    <div
+      class="flex-grow overflow-y-auto h-screen w-[calc(100%-13rem)] transition-all duration-300 pt-14 custom-scrollbar bg-[#111213]"
+      id="main-content"
+    >
+      <div class="w-full h-full p-5">
+        <div
+          class="flex overflow-x-auto mb-4 pb-4 sticky top-0 pt-7 z-40 border-b bg-[#111213] border-[#1d1d1d] custom-scrollbar"
+          id="category-tabs"
+        >
+          <div
+            class="px-4 py-2 mr-2 bg-[#1d1d1d] border-none font-sx rounded-full text-white cursor-pointer whitespace-nowrap active category-tab"
+            data-category="all"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img
+                src="icons/icons8-border-all-48.png"
+                alt=""
+                class="w-5 h-5"
+              />
+              <p>All apps</p></span
+            >
+          </div>
+          <div
+            class="px-4 py-2 mr-2 bg-[#000] border-none rounded-full text-gray-400 cursor-pointer whitespace-nowrap category-tab"
+            data-category="social"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img src="icons/icons8-social-48.png" alt="" class="w-5 h-5" />
+              <p>Socials</p></span
+            >
+          </div>
+          <div
+            class="px-4 py-2 mr-2 bg-[#000] border-none rounded-full text-gray-400 cursor-pointer whitespace-nowrap category-tab"
+            data-category="productivity"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img
+                src="icons/icons8-positive-dynamic-48 (1).png"
+                alt=""
+                class="w-5 h-5"
+              />
+              <p>Productivity</p></span
+            >
+          </div>
+          <div
+            class="px-4 py-2 mr-2 bg-[#000] border-none rounded-full text-gray-400 cursor-pointer whitespace-nowrap category-tab"
+            data-category="development"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img
+                src="icons/icons8-development-64.png"
+                alt=""
+                class="w-5 h-5"
+              />
+              <p>Dev</p></span
+            >
+          </div>
+          <div
+            class="px-4 py-2 mr-2 bg-[#000] border-none rounded-full text-gray-400 cursor-pointer whitespace-nowrap category-tab"
+            data-category="media"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img src="icons/icons8-tv-48.png" alt="" class="w-5 h-5" />
+              <p>Media</p></span
+            >
+          </div>
+          <div
+            class="px-4 py-2 mr-2 bg-[#000] border-none rounded-full text-gray-400 cursor-pointer whitespace-nowrap category-tab"
+            data-category="games"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img src="icons/icons8-games-50.png" alt="" class="w-5 h-5" />
+              <p>Games</p></span
+            >
+          </div>
+          <div
+            class="px-4 py-2 mr-2 bg-[#000] border-none rounded-full text-gray-400 cursor-pointer whitespace-nowrap category-tab"
+            data-category="utilities"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img
+                src="icons/icons8-utilities-100.png"
+                alt=""
+                class="w-5 h-5"
+              />
+              <p>Util</p></span
+            >
+          </div>
+          <div
+            class="px-4 py-2 mr-2 bg-[#000] border-none rounded-full text-gray-400 cursor-pointer whitespace-nowrap category-tab"
+            data-category="finance"
+          >
+            <span class="flex gap-3 justify-center items-center"
+              ><img
+                src="icons/icons8-bitcoin-50 (1).png"
+                alt=""
+                class="w-5 h-5"
+              />
+              <p>Finance</p></span
+            >
+          </div>
+        </div>
+
+        <div
+          id="app-grid"
+          class="grid gap-4 py-5 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]"
+        >
+          <!-- App cards will be generated here by JavaScript -->
+        </div>
+
+        <!-- No Results Message -->
+        <div id="no-results" class="hidden text-center py-10">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="mx-auto mb-4 text-gray-500"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <h2 class="text-xl font-semibold text-gray-300 mb-2">
+            No applications found
+          </h2>
+          <p class="text-gray-500">Try adjusting your search</p>
+          <button
+            id="reset-search"
+            class="mt-4 px-4 py-2 bg-[#27282d] text-white rounded-md hover:bg-[#1d1d1d]"
+          >
+            Reset Search
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button
+      id="add-app-button"
+      class="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-[#00371b] text-white flex items-center justify-center border-none cursor-pointer shadow-lg hover:bg-[#00371b] z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M5 12h14"></path>
+        <path d="M12 5v14"></path>
+      </svg>
+    </button>
+
+    <!-- Add App Modal -->
+    <div
+      id="add-app-modal"
+      class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 z-[1000] items-center justify-center"
+    >
+      <div
+        class="bg-[#0a0a0a] rounded-lg p-8 w-[50%] min-w-lg max-h-[90vh] overflow-y-auto border border-[#27282d] relative custom-scrollbar"
+      >
+        <button
+          id="close-modal"
+          class="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer text-gray-400"
+        >
+          &times;
+        </button>
+
+        <div class="mb-5">
+          <h2 class="text-xl font-semibold text-white">Add New Application</h2>
+          <p class="text-gray-400">Add a local application to your launcher.</p>
+        </div>
+
+        <div class="mb-5">
+          <label for="app-name" class="block mb-2 font-medium text-white"
+            >Application Name</label
+          >
+          <input
+            type="text"
+            id="app-name"
+            class="w-full p-2 border border-[#27282d] rounded-md text-base bg-[#1d1d1d] text-white"
+            placeholder="Enter application name"
+          />
+        </div>
+
+        <div class="mb-5">
+          <label for="app-path" class="block mb-2 font-medium text-white"
+            >Application Path</label
+          >
+          <div class="relative overflow-hidden inline-block w-full">
+            <button
+              id="choose-exe-btn"
+              class="bg-[#1d1d1d] border border-[#27282d] rounded-md p-2 text-white cursor-pointer w-full text-center"
+            >
+              Choose Application
+            </button>
+          </div>
+          <div id="selected-file" class="mt-2 text-sm text-gray-400">
+            No file selected
+          </div>
+        </div>
+
+        <div class="mb-5">
+          <label for="app-category" class="block mb-2 font-medium text-white"
+            >Category</label
+          >
+          <select
+            id="app-category"
+            class="w-full p-2 border border-[#27282d] rounded-md text-base bg-[#1d1d1d] text-white"
+          >
+            <option value="social">Social</option>
+            <option value="productivity">Productivity</option>
+            <option value="development">Development</option>
+            <option value="media">Media</option>
+            <option value="utilities">Utilities</option>
+            <option value="games">Games</option>
+            <option value="finance">Finance</option>
+          </select>
+        </div>
+
+        <div class="mb-5">
+          <!-- <label class="block mb-2 font-medium text-white"
+            >Application Icon</label
+          >
+          <button
+            type="button"
+            id="choose-icon-btn"
+            class="bg-[#1d1d1d] border border-[#27282d] rounded-md p-2 text-white cursor-pointer w-full text-center"
+          >
+            Choose Icon
+          </button> -->
+          <div
+            id="icon-preview"
+            class="w-16 h-16 rounded-xl overflow-hidden mx-auto my-2 flex items-center justify-center bg-[#1d1d1d]"
+          >
+            <img
+              src="icons/icons8-windows-os-48.png"
+              class="w-12 h-12"
+              alt=""
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-5">
+          <button
+            id="cancel-add-app"
+            class="bg-[#1d1d1d] border-none text-white py-2 px-4 rounded-md font-medium cursor-pointer hover:bg-[#27282d]"
+          >
+            Cancel
+          </button>
+          <button
+            id="confirm-add-app"
+            class="bg-[#27282d] border-none text-white py-2 px-4 rounded-md font-medium cursor-pointer hover:bg-[#1d1d1d]"
+          >
+            Add Application
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Icon Gallery Modal -->
+    <div
+      id="icon-gallery-modal"
+      class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 z-[1000] items-center justify-center"
+    >
+      <div
+        class="bg-[#00371b] rounded-lg p-8 w-[90%] max-w-lg max-h-[90vh] overflow-y-auto border border-[#00371b] relative custom-scrollbar"
+      >
+        <button
+          id="close-icon-gallery"
+          class="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer text-gray-400"
+        >
+          &times;
+        </button>
+
+        <!-- <div class="mb-5">
+          <h2 class="text-xl font-semibold text-white">Choose an Icon</h2>
+          <p class="text-gray-400">Select an icon for your application.</p>
+        </div>
+
+        <div class="flex overflow-x-auto mb-4 pb-1 custom-scrollbar">
+          <button
+            class="px-4 py-2 mr-2 bg-[#1d1d1d] border border-[#27282d] rounded-full text-gray-400 cursor-pointer whitespace-nowrap active icon-gallery-tab"
+            data-category="social"
+          >
+            Social Media
+          </button>
+          <button
+            class="px-4 py-2 mr-2 bg-[#1d1d1d] border border-[#27282d] rounded-full text-gray-400 cursor-pointer whitespace-nowrap icon-gallery-tab"
+            data-category="tech"
+          >
+            Tech & Software
+          </button>
+          <button
+            class="px-4 py-2 mr-2 bg-[#1d1d1d] border border-[#27282d] rounded-full text-gray-400 cursor-pointer whitespace-nowrap icon-gallery-tab"
+            data-category="productivity"
+          >
+            Productivity
+          </button>
+          <button
+            class="px-4 py-2 mr-2 bg-[#1d1d1d] border border-[#27282d] rounded-full text-gray-400 cursor-pointer whitespace-nowrap icon-gallery-tab"
+            data-category="entertainment"
+          >
+            Entertainment
+          </button>
+        </div> -->
+
+        <!-- <div
+          class="grid grid-cols-5 gap-4 icon-gallery-grid custom-scrollbar"
+          id="icon-gallery-grid"
+        >
+          Icons will be populated here by JavaScript
+        </div> -->
+
+        <div class="flex justify-end gap-2 mt-5">
+          <button
+            id="cancel-icon-select"
+            class="bg-[#1d1d1d] border-none text-white py-2 px-4 rounded-md font-medium cursor-pointer hover:bg-[#27282d]"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="projectscript.js"></script>
+  </body>
+</html>
